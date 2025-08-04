@@ -82,6 +82,7 @@ def save_state():
         state = {
             "input_file": input_file if 'input_file' in globals() else "",
             "template_file": template_file if 'template_file' in globals() else "",
+            "dttemplate_file": dttemplate_file if 'dttemplate_file' in globals() else "",
             "attB_file": attB_file if 'attB_file' in globals() else "",
             "attB2_file": attB2_file if 'attB2_file' in globals() else "",
             "attC_file": attC_file if 'attC_file' in globals() else "",
@@ -89,7 +90,6 @@ def save_state():
             "bsigned_file": bsigned_file if 'bsigned_file' in globals() else "",
             "csigned_file": csigned_file if 'csigned_file' in globals() else "",
             "reporting_year": date_entry.get(),
-            "output_data_tables": dt_ceckbox_var.get(),
             "pdf_merger": pdfm_checkbox_var.get()
         }
         with open(STATE_FILE, "w") as f:
@@ -98,7 +98,7 @@ def save_state():
         print(f"Failed to save state: {e}")
 
 def load_state():
-    global input_file, template_file, tif_inst, attB_file, attB2_file, attC_file, attC2_file
+    global input_file, template_file, dttemplate_file, tif_inst, attB_file, attB2_file, attC_file, attC2_file
     global bsigned_file, csigned_file
     
     if not Path(STATE_FILE).exists():
@@ -109,7 +109,6 @@ def load_state():
         input_file = state.get("input_file", "")
         template_file = state.get("template_file", "")
         date_entry.insert(0, state.get("reporting_year", ""))
-        dt_ceckbox_var.set(state.get("output_data_tables", False))
         pdfm_checkbox_var.set(state.get("pdf_merger", False))
         
         attB_file    = state.get("attB_file", "")
@@ -126,24 +125,27 @@ def load_state():
 
         if template_file:
             truncate_label(template_label, text=Path(template_file).name)
+        if dttemplate_file:
+            truncate_label(template_label, text=Path(dttemplate_file).name)
+
         if bsigned_file:
             truncate_label(bsigned_label, text=Path(bsigned_file).name)
         if csigned_file:
             truncate_label(csigned_label, text=Path(csigned_file).name)
             
         if attB_file:
-            truncate_label(attB_label, text=Path(attB_file).name, max_length=12)
+            truncate_label(attB_label, text=Path(attB_file).name)
         if attB2_file:
-            truncate_label(attB2_label, text=Path(attB2_file).name, max_length=12)
+            truncate_label(attB2_label, text=Path(attB2_file).name)
         if attC_file:
-            truncate_label(attC_label, text=Path(attC_file).name, max_length=12)
+            truncate_label(attC_label, text=Path(attC_file).name)
         if attC2_file:
-            truncate_label(attC2_label, text=Path(attC2_file).name, max_length=12)
+            truncate_label(attC2_label, text=Path(attC2_file).name)
 
     except Exception as e:
         print(f"Failed to load state: {e}")
 
-def truncate_label(label, text, max_length=22):
+def truncate_label(label, text, max_length=18):
     if len(text) > max_length:
         text = text[:max_length] + "..."
     label.config(text=text)
@@ -168,6 +170,16 @@ def open_template_file():
         truncate_label(template_label, text=f"{file_name}")
         global template_file
         template_file = file_path
+
+def open_dttemplate_file():
+    file_path = filedialog.askopenfilename(
+        filetypes=[("Excel files", "*.xls *.xlsx *.xlsm"), ("All files", "*.*")]
+    )
+    if file_path:  # If a file is selected
+        file_name = Path(file_path).name
+        truncate_label(dttemp_label, text=f"{file_name}")
+        global dttemplate_file
+        dttemplate_file = file_path
         
 def open_attB_file():
     file_path = filedialog.askopenfilename(filetypes=[("Word documents", "*.docx;*.doc")])
@@ -240,6 +252,7 @@ def run_code():
     global atr_thread, word_app, excel_app
     # Disable the Run button, enable Cancel
     button_run.config(state=tk.DISABLED)
+    button_dt.config(state=tk.DISABLED)
     button_cancel.config(state=tk.NORMAL)
     run_status.config(text="Running...")
     run_status.update_idletasks()
@@ -249,10 +262,7 @@ def run_code():
         if tif_inst.checkboxes[i].get() == True:
             # print("checked box found")
             tif_final.append(tif_inst.list[i])
-    
-    if dt_ceckbox_var.get() == True:
-        Data_Tables.Data_Tables(date_entry.get())
-    
+
     def target():
         global word_app, excel_app
         # In ATR you do:
@@ -270,6 +280,7 @@ def run_code():
         finally:
             # Restore buttons
             button_run.config(state=tk.NORMAL)
+            button_dt.config(state=tk.NORMAL)
             button_cancel.config(state=tk.DISABLED)
             
             try: 
@@ -284,6 +295,38 @@ def run_code():
     atr_thread = threading.Thread(target=target, daemon=True)
     atr_thread.start()
             
+def run_dt():
+    button_run.config(state=tk.DISABLED)
+    button_dt.config(state=tk.DISABLED)
+    button_cancel.config(state=tk.NORMAL)
+    run_status.config(text="Running...")
+    run_status.update_idletasks()
+
+    def dttarget():
+        global word_app, excel_app
+        # In ATR you do:
+        word_app = win32.Dispatch("Word.Application")
+        excel_app = win32.Dispatch("Excel.Application")
+        
+        try:
+            Data_Tables.Data_Tables(date_entry.get(), input_file, dttemplate_file)
+            run_status.config(text="Run Complete")
+        except Exception as e:
+            run_status.config(text=f"Error: {e}")      
+            print(e) 
+        finally:
+            # Restore buttons
+            button_run.config(state=tk.NORMAL)
+            button_dt.config(state=tk.NORMAL)
+            button_cancel.config(state=tk.DISABLED)
+
+            try: 
+                excel_app.Quit()
+            except: 
+                pass
+
+    atr_thread = threading.Thread(target=dttarget, daemon=True)
+    atr_thread.start()
 
 # main window
 root = tk.Tk()
@@ -324,16 +367,6 @@ date_entry.pack(side=tk.LEFT)
 label = tk.Label(text_frame, text="")
 label.pack(side=tk.LEFT, padx=20)
 
-label = ttk.Label(text_frame, text="Output Data Tables") 
-label.pack(side=tk.LEFT, padx=5)
-
-dt_ceckbox_var = tk.BooleanVar(value=False)
-data_table_checkbox = ttk.Checkbutton(text_frame, variable=dt_ceckbox_var)
-data_table_checkbox.pack(side=tk.LEFT)
-
-label = tk.Label(text_frame, text="")
-label.pack(side=tk.LEFT, padx=20)
-
 label = ttk.Label(text_frame, text="PDF Merger")
 label.pack(side=tk.LEFT, padx=5)
 
@@ -347,49 +380,54 @@ file_frame.pack(pady=10)
 
 file_button = ttk.Button(file_frame, text="Input File", command=open_input_file)
 file_button.pack(side=tk.LEFT)
-file_label = ttk.Label(file_frame, text="No file selected            ")
+file_label = ttk.Label(file_frame, text="No file selected        ")
 file_label.pack(side=tk.LEFT, padx=5)
 
-template_button = ttk.Button(file_frame, text="Template File", command=open_template_file)
+template_button = ttk.Button(file_frame, text="ATR Template", command=open_template_file)
 template_button.pack(side=tk.LEFT)
-template_label = ttk.Label(file_frame, text="No file selected               ")
+template_label = ttk.Label(file_frame, text="No file selected        ")
 template_label.pack(side=tk.LEFT, padx=5)
+
+dttemp_button = ttk.Button(file_frame, text="DT Template", command=open_dttemplate_file)
+dttemp_button.pack(side=tk.LEFT)
+dttemp_label = ttk.Label(file_frame, text="No file selected        ")
+dttemp_label.pack(side=tk.LEFT, padx=5)
 
 att_frame = tk.Frame(root)
 att_frame.pack(pady=10)
 
 attB_button = ttk.Button(att_frame, text="Att B TIFCorp", command=open_attB_file)
 attB_button.pack(side=tk.LEFT)
-attB_label = ttk.Label(att_frame, text="No file selected  ")
+attB_label = ttk.Label(att_frame, text="No file selected        ")
 attB_label.pack(side=tk.LEFT, padx=5)
 
 attB2_button = ttk.Button(att_frame, text="Att B IJRL", command=open_attB2_file)
 attB2_button.pack(side=tk.LEFT)
-attB2_label = ttk.Label(att_frame, text="No file selected  ")
+attB2_label = ttk.Label(att_frame, text="No file selected        ")
 attB2_label.pack(side=tk.LEFT, padx=5)
 
 attC_button = ttk.Button(att_frame, text="Att C TIFCorp", command=open_attC_file)
 attC_button.pack(side=tk.LEFT)
-attC_label = ttk.Label(att_frame, text="No file selected  ")
+attC_label = ttk.Label(att_frame, text="No file selected        ")
 attC_label.pack(side=tk.LEFT, padx=5)
-
-attC2_button = ttk.Button(att_frame, text="Att C IJRL", command=open_attC2_file)
-attC2_button.pack(side=tk.LEFT)
-attC2_label = ttk.Label(att_frame, text="No file selected  ")
-attC2_label.pack(side=tk.LEFT, padx=5)
 
 
 signed_frame = tk.Frame(root)
 signed_frame.pack(pady=10)
 
+attC2_button = ttk.Button(signed_frame, text="Att C IJRL", command=open_attC2_file)
+attC2_button.pack(side=tk.LEFT)
+attC2_label = ttk.Label(signed_frame, text="No file selected        ")
+attC2_label.pack(side=tk.LEFT, padx=5)
+
 bsigned_button = ttk.Button(signed_frame, text="Att B Signed", command=open_bsigned_file)
 bsigned_button.pack(side=tk.LEFT)
-bsigned_label = ttk.Label(signed_frame, text="No file selected            ")
+bsigned_label = ttk.Label(signed_frame, text="No file selected        ")
 bsigned_label.pack(side=tk.LEFT, padx=5)
 
 csigned_button = ttk.Button(signed_frame, text="Att C Signed", command=open_csigned_file)
 csigned_button.pack(side=tk.LEFT)
-csigned_label = ttk.Label(signed_frame, text="No file selected               ")
+csigned_label = ttk.Label(signed_frame, text="No file selected        ")
 csigned_label.pack(side=tk.LEFT, padx=5)
 
 # sorting frame
@@ -529,11 +567,17 @@ button_num.pack(side="right", padx=5)
 run_frame = tk.Frame(root)
 run_frame.pack(pady=10)
 
-button_run = ttk.Button(run_frame, text="Run", command=run_code)
+button_run = ttk.Button(run_frame, text="Run ATR", command=run_code)
 button_run.pack(side=tk.LEFT)
 
 run_buf = ttk.Label(run_frame, text="                  ")
 run_buf.pack(side=tk.LEFT)
+
+button_dt = ttk.Button(run_frame, text="Run Data Tables", command=run_dt)
+button_dt.pack(side=tk.LEFT)
+
+dt_buf = ttk.Label(run_frame, text="                  ")
+dt_buf.pack(side=tk.LEFT)
 
 button_cancel = ttk.Button(run_frame, text="Cancel", command=cancel_run, state=tk.DISABLED)
 button_cancel.pack(side=tk.LEFT)

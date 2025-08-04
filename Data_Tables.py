@@ -5,26 +5,31 @@ from openpyxl.styles import Font
 from openpyxl.styles import Alignment
 import shutil
 import os
+import sys
 
-# Columns to collect from in Data
+# Columns to collect from in Data (ReptYear ignored becaused added manually)
+
 section_1     = {"A", "B", "C", "D", "E"}
-section_2     = {"A", "B", "C", "D", "E"}
-section_3_1   = {"C", "D", "E", "G", "J", "M", "P", "S", "V", "Y", "AB", "AC", "AD", "AE", "AF"}
+section_2     = {"A", "C", "D", "E"}
+section_3_1   = {"C", "E", "G", "J", "M", "P", "S", "V", "Y", "AB", "AC", "AD", "AE", "AF"}
 section_3_1_prev = {"C", "D", "E", "F", "H", "I", "J"}
-section_3_1_other = {"C", "D", "E", "G", "J", "M" "P", "S", "V", "Y", "AB", "AC", "AD", "AE", "AF"}
+section_3_1_other = {"C", "E", "F", "H", "J", "L", "N", "P"}
 section_3_1_other_prev = {"C", "D", "E", "F", "H", "I", "J"}
-section_3_2_A = {"C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W"}
-section_3_2_B = {"A", "B", "C", "D", "E"}
-section_3_3   = {"C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"}
-section_4     = {"A", "B", "C", "D"}
-section_5     = {"A", "B", "C", "E", "F", "G", "H", "K", "L", "M", "O", "Q", "R", "S", "T", "U"}
-section_6_2   = {"A", "C", "E", "F", "G", "H", "I"}
-section_6_3   = 
-attach_A      = 
-attach_D      = 
-attach_E      = 
-attach_H      = 
+section_3_2_A = {"C", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W"}
+section_3_2_B = {"A", "C", "D", "E"}
+section_3_3   = {"C", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"}
+section_4     = {"B", "C", "D"}
+section_5     = {"B", "C", "E", "F", "G", "H", "K", "L", "M", "O", "Q", "R", "S", "T", "U"}
+section_6_2   = {"C", "E", "F", "G", "H", "I"}
+section_6_3   = {"C", "E", "F", "G"}
+attach_A      = {"B", "C", "D", "E", "F"}
+attach_D      = {"B", "C", "D"}
+attach_E      = {"B", "C", "D", "E"}
+attach_H      = {"B", "C"}
 
+
+sections = {section_1, section_2, section_3_1, section_3_1_prev, section_3_1_other, section_3_1_other_prev, section_3_2_A, section_3_2_B, 
+            section_3_3, section_4, section_5, section_6_2, section_6_3, attach_A, attach_D, attach_E, attach_H}
 
 def column_match(label_row: int, data):
     """Selects the "tifnum" column in the excel file
@@ -109,5 +114,15 @@ def populate(data, destination, column_labels, column_map):
     
 
 def Data_Tables(reporting_year, input_file, template_file):
-    shutil.copy('2023 ATR Data Tables - Final 2025 01 03.xlsx', 'Data Tables Copy.xlsx')  # CHANGE IF FILE CHANGES
-    copied_table = load_workbook('Data Tables Copy.xlsx')
+    print("ATR entered")
+    
+    if getattr(sys, 'frozen', False):
+        # Running as bundled exe
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        # Running as plain .py
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    master_input = load_workbook(input_file, data_only=True)
+    shutil.copy(template_file, 'Data Tables Copy.xlsx')  # CHANGE IF FILE CHANGES
+    final_table = load_workbook('Data Tables Copy.xlsx')
