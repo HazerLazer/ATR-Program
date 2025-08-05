@@ -326,7 +326,7 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
         
         # Part 2: Filling data
         column_labels = {
-            'tifnum': None, 'tifname': None, 'approvedate': None, 'expiredate': None,
+            'tifnum': None, 'tifname': None, 'approvedate': None, 'expiredate': None
         }
         column_map = {
             'tifname': 2, 'approvedate': 7, 'expiredate': 9
