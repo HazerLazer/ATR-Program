@@ -6,6 +6,7 @@ from openpyxl.styles import Alignment
 import shutil
 import os
 import sys
+from datetime import date
 from Annual_TIF_Report import column_match
 
 
@@ -23,15 +24,16 @@ section_2     = {'tifnum': None, 'reptyear': None, 'primaryuse': None, 'combomix
 
 section_3_1   = {'tifnum': None, 'reptyear': None, 'taxallocationfundbalance': None, 'proptaxincr-current': None, 
                  'interest-current': None, 'land/bldg-current': None, 'bond-current': None, 
-                 'municipal-current': None, 'private-current': None, 'distributionofsurplus': None,
+                 'municipal-current': None, 'private-current': None, 'totalreceipts': None, 'distributionofsurplus': None,
                  'transfers--municipal': None, 'totalexpend/dist': None, 'netincomecalc': None, 'fundbalancecalc': None}
 
-skip2_list    = {'taxallocationfundbalance', 'proptaxincr-current', 'interest-current', 'land/bldg-current', 'bond-current', 
-                 'municipal-current', 'private-current'}
+skip2_list    = {'proptaxincr-current', 'interest-current', 'land/bldg-current', 'bond-current', 'municipal-current'}
+
+skip1_list    = {'taxallocationfundbalance', 'private-current', 'totalreceipts'}
 
 section_3_1_prev = {'proptaxincr-previous': None, 'interest previous': None, 
                     'land building sale previous': None, 'bond proceeds previous': None,
-                    'note previous': None, 'transfers to municipal sources previous': None, 
+                    'transfers to municipal sources previous': None, 
                     'private sources previous': None}
 
 section_3_1_other = {'tifnum': None, 'reptyear': None, 'noteproceedscurrentyear': None, 'noncompliancepayment': None, 
@@ -53,8 +55,8 @@ section_3_2_A = {'tifnum': None, 'reptyear': None, 'costofstudies': None, 'admin
 section_3_2_B = {"tifnum": None, "reptyear": None, "vendorname": None, "vendorservice": None, "payamt": None} 
 
 section_3_3   = {"tifnum": None, "reptyear": None, "fundbalancecalc": None, "description of debt obligations": None, 
-                 "amount of original issuance": None, "subsequentissuance": None, 
-                 "amount designated _(debt obligations)": None, "descriptions of project costs to be paid": None, 
+                 "amount of original issuance": None, "amount of additional issuance": None,
+                 "amount designated (debt obligations)": None, "descriptions of project costs to be paid": None, 
                  "amount designated _(project costs)": None, "totaldes": None, "surplus/deficit": None}
 
 section_4     = {"reptyear": None, "tifnum": None, "address": None, "property status": None}
@@ -70,10 +72,10 @@ section_6_2   = {'reptyear': None, 'tifnum': None, 'projectname': None, 'jobspro
 
 section_6_3   = {'reptyear': None, 'tifnum': None, 'projectname': None, 'incrementprojected': None, 'incrementactual': None}
 
-attach_A      = {"B", "C", "D", "E", "F"}
-attach_D      = {"B", "C", "D"}
-attach_E      = {"B", "C", "D", "E"}
-attach_H      = {"B", "C"}
+attach_A      = {"reptyear": None, "tifnum": None, "tifname": None, "ordinance received": None, "ordinance action": None, "amendment date": None}
+attach_D      = {"reptyear": None, "tifnum": None, "projectname": None}
+attach_E      = {"reptyear": None, "tifnum": None, "address": None, "propertystatus": None}
+attach_H      = {"reptyear": None, "tifnum": None, "tifname": None}
 
 sections = {"Section 1": section_1, "Section 2": section_2, "Section 3.1": section_3_1, "Section 3.1 Previous": section_3_1_prev, "Section 3.1 Other": section_3_1_other,
             "Section 3.1 Other Previous": section_3_1_other_prev, "Section 3.2a": section_3_2_A, "Section 3.2b": section_3_2_B, "Section 3.3": section_3_3, 
@@ -82,8 +84,8 @@ sections = {"Section 1": section_1, "Section 2": section_2, "Section 3.1": secti
 
 calculated = {"Section 3.1", "Section 3.1 Previous", "Section 3.1 Other", "Section 3.1 Other Previous"}
 
-start_rows = {"Section 1": 2, "Section 2": 2, "Section 3.1": 4, "Section 3.1 Previous": 2, "Section 3.1 Other": 4,
-              "Section 3.1 Other Previous": 2, "Section 3.2a": 6, "Section 3.2b": 2, "Section 3.3": 4, 
+start_rows = {"Section 1": 2, "Section 2": 2, "Section 3.1": 4, "Section 3.1 Previous": 3, "Section 3.1 Other": 4,
+              "Section 3.1 Other Previous": 2, "Section 3.2a": 6, "Section 3.2b": 3, "Section 3.3": 4, 
               "Section 4": 2, "Section 5": 3, "Section 6.2": 3, "Section 6.3": 2, "Attachment A": 2, "Attachment D": 2, 
               "Attachment E": 2, "Attachment H": 2}
 
@@ -120,7 +122,7 @@ def set_data_length(data, tif_col: int, row_start: int):
     row = row_start
     while True:
         cell = data.cell(row=row, column=tif_col)
-        if cell:
+        if cell.value != None:
             length += 1
             row    += 1
         else:
@@ -149,10 +151,14 @@ def get_column_data(data, col: int, start_row: int, length: int):
     Returns:
         values (list): list of values in a column of data
     """
-    cells  = data[col][start_row-1 : start_row+length]
-    values = [cell.value for cell in cells]
+    # cells  = data[col][start_row-1 : start_row+length]
+    # values = [cell.value for cell in cells]
     
-    return values
+    # return values
+    return [
+        data.cell(row=r, column=col).value
+        for r in range(start_row, start_row + length)
+    ]
 
 def fill_column(destination, col, start_row, values):
     for value in values:
@@ -160,6 +166,41 @@ def fill_column(destination, col, start_row, values):
         start_row += 1
     return
 
+def copy_columns(src_ws, dst_ws, mapping, src_start, dst_start_row, reporting_year):
+    """
+    Args:
+        src_ws        : openpyxl worksheet you're reading from
+        dst_ws        : openpyxl worksheet you're writing to
+        mapping_dict  : { logical_name: src_col_index, … }
+        src_start     : the first row in src_ws to read
+        dst_start_row : the first row in dst_ws to write
+    """
+    length = set_data_length(src_ws, mapping["tifnum"], src_start)
+    if length == 0:
+        return
+
+    # 2) iterate *in the order of your mapping keys*
+    for dst_col, field in enumerate(mapping.keys(), start=1):
+        src_col = mapping[field]
+        if field == "reptyear":
+            fill_date(dst_ws, dst_start_row, dst_col, reporting_year, length)
+        elif src_col is not None:
+            # grab the entire column from src and write it downwards in dst
+            for i in range(length):
+                val = src_ws.cell(row=src_start + i, column=src_col).value
+                dst_ws.cell(row=dst_start_row + i, column=dst_col, value=val)
+
+def _num(v):
+    if v is None:
+        return 0
+    if isinstance(v, (int, float)):
+        return v
+    try:
+        # strip commas, dollar‐signs, whatever—and float it
+        return float(str(v).replace(',', '').replace('$',''))
+    except ValueError:
+        return 0
+    
 
 def populate_sheet(master_input, final_table, reporting_year):
     """Populates an entire column of data from one workbook to another
@@ -168,70 +209,84 @@ def populate_sheet(master_input, final_table, reporting_year):
         master_input (path): workbook that contains the input data
         destination (path): sheet that contains the output data
     """
-    for sec_name, section in sections:
+    for sec_name, section in sections.items():
         length = 0
         if sec_name in calculated:
             if sec_name == "Section 3.1":
+                print("entered 3.1")
                 prev_name = "Section 3.1 Previous"
                 data = master_input[sec_name]
                 prev_data = master_input[prev_name]
                 destination = final_table[sec_name]
 
-                matched_section = column_match(1, data, section)
-                prev_matched_section = column_match(1, prev_data, sections[prev_name])
+                matched_section = column_match(1, data, sections[sec_name].copy())
+                prev_matched_section = column_match(1, prev_data, sections["Section 3.1 Previous"].copy())
+                length = set_data_length(data, matched_section["tifnum"], start_rows[sec_name])
                 
                 i = 1
-                for col_name, col_num in matched_section:
+                for col_name, col_num in matched_section.items():
                     if col_name == "reptyear":
-                        fill_date(destination, start_rows[sec_name], i, reporting_year, length)
+                        fill_date(destination, 2, i, reporting_year, length)
                     elif length != 0:
-                        values = get_column_data(data, col_num, start_rows[sec_name], length)
-                        fill_column(destination, i, 2, values)
-                    
+                        if col_name == "totalexpend/dist":
+                            data = master_input["Section 3.2a"]
+
+                            values = get_column_data(data, 24, start_rows["Section 3.2a"], length)
+                            fill_column(destination, i, 2, values)
+                            
+                            data = master_input[sec_name]
+                        else:
+                            values = get_column_data(data, col_num, start_rows[sec_name], length)
+                            fill_column(destination, i, 2, values)
+                        
                     if col_name in skip2_list:
+                        i += 3
+                    elif col_name in skip1_list:
                         i += 2
                     else:
                         i += 1
 
                 i = 4
-                for col_name, col_num in prev_matched_section:
+                for col_name, col_num in prev_matched_section.items():
                     if length != 0:
-                        values = get_column_data(data, col_num, start_rows[prev_name], length)
+                        values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
                         fill_column(destination, i, 2, values)
-                    i += 2
+                    i += 3
 
                 i = 0
                 while i < length:
-                    value1 = destination.cell(row=i+2, column=4).value + destination.cell(row=i+2, column=5).value
-                    value2 = destination.cell(row=i+2, column=7).value + destination.cell(row=i+2, column=8).value
-                    value3 = destination.cell(row=i+2, column=10).value + destination.cell(row=i+2, column=11).value
-                    value4 = destination.cell(row=i+2, column=13).value + destination.cell(row=i+2, column=14).value
-                    value5 = destination.cell(row=i+2, column=16).value + destination.cell(row=i+2, column=17).value
-                    value6 = destination.cell(row=i+2, column=19).value + destination.cell(row=i+2, column=20).value
-                    value7 = destination.cell(row=i+2, column=22).value + destination.cell(row=i+2, column=23).value
+                    value1 = _num(destination.cell(row=i+2, column=4).value) + _num(destination.cell(row=i+2, column=5).value)
+                    value2 = _num(destination.cell(row=i+2, column=7).value) + _num(destination.cell(row=i+2, column=8).value)
+                    value3 = _num(destination.cell(row=i+2, column=10).value) + _num(destination.cell(row=i+2, column=11).value)
+                    value4 = _num(destination.cell(row=i+2, column=13).value) + _num(destination.cell(row=i+2, column=14).value)
+                    value5 = _num(destination.cell(row=i+2, column=16).value) + _num(destination.cell(row=i+2, column=17).value)
+                    value6 = _num(destination.cell(row=i+2, column=19).value) + _num(destination.cell(row=i+2, column=20).value)
                     destination.cell(row=i+2, column=6).value = value1
                     destination.cell(row=i+2, column=9).value = value2
                     destination.cell(row=i+2, column=12).value = value3
                     destination.cell(row=i+2, column=15).value = value4
                     destination.cell(row=i+2, column=18).value = value5
                     destination.cell(row=i+2, column=21).value = value6
-                    destination.cell(row=i+2, column=24).value = value7
-                    destination.cell(row=i+2, column=26).value = value1 + value2 + value3 + value4 + value5 + value6 + value7
+                    destination.cell(row=i+2, column=23).value = value1 + value2 + value3 + value4 + value5 + value6
                     i += 1
+                
+                
 
             elif sec_name == "Section 3.1 Other":
+                print("entered 3.1 Other")
                 prev_name = "Section 3.1 Other Previous"
                 data = master_input[sec_name]
                 prev_data = master_input[prev_name]
                 destination = final_table[sec_name]
                 
-                matched_section = column_match(1, data, section)
-                prev_matched_section = column_match(1, prev_data, sections[prev_name])
+                matched_section = column_match(1, data, sections[sec_name].copy())
+                prev_matched_section = column_match(1, prev_data, sections[prev_name].copy())
+                length = set_data_length(data, matched_section["tifnum"], start_rows[sec_name])
                 
                 i = 1
-                for col_name, col_num in matched_section:
+                for col_name, col_num in matched_section.items():
                     if col_name == "reptyear":
-                        fill_date(destination, start_rows[sec_name], i, reporting_year, length)
+                        fill_date(destination, 2, i, reporting_year, length)
                     elif length != 0:
                         values = get_column_data(data, col_num, start_rows[sec_name], length)
                         fill_column(destination, i, 2, values)
@@ -242,64 +297,67 @@ def populate_sheet(master_input, final_table, reporting_year):
                         i += 2
 
                 i = 3
-                for col_name, col_num in prev_matched_section:
+                for col_name, col_num in prev_matched_section.items():
                     if length != 0:
                         if col_name == 'prioryearscumulative':
-                            values = get_column_data(data, col_num, start_rows[prev_name], length)
+                            values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
                             fill_column(destination, i, 2, values)
                             destination = final_table["Section 3.1"]
                             j = 0
                             for value in values:
-                                destination.cell(row=j+2, column=24).value = value + destination.cell(row=j+2, column=24).value
+                                destination.cell(row=j+2, column=23).value = _num(value) + _num(destination.cell(row=j+2, column=23).value)
                                 j += 1
                             destination = destination = final_table[sec_name]
                         else:
-                            values = get_column_data(data, col_num, start_rows[prev_name], length)
+                            values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
                             j = 0
                             for value in values:
-                                destination.cell(j+2, i).value = value + destination.cell(j+2, i-1).value
+                                destination.cell(j+2, i).value = _num(value) + _num(destination.cell(j+2, i-1).value)
                                 j += 1
                     i += 2
 
 
         else:
-            data = master_input[sec_name]
+            # data = master_input[sec_name]
+            # destination = final_table[sec_name]
+
+            # matched_section = column_match(1, data, section)
+            # length = set_data_length(data, matched_section["tifnum"], start_rows[sec_name])
+            # i = 1
+
+            # for col_name, col_num in matched_section.items():
+            #     if col_name == "reptyear":
+            #         fill_date(destination, 2, i, reporting_year, length)
+            #     elif length != 0:
+            #         values = get_column_data(data, col_num, start_rows[sec_name], length)
+            #         fill_column(destination, i, 2, values)
+
+            #     i += 1
+            print(f"entered {sec_name}")
+            data        = master_input[sec_name]
             destination = final_table[sec_name]
+            mapping     = sections[sec_name].copy()
+            mapping     = column_match(1, data, mapping)
+            src_row     = start_rows[sec_name]
+            dst_row     = 2  # or wherever your output always begins
 
-            matched_section = column_match(1, data, section)
-            length = set_data_length(data, matched_section["tifnum"], start_rows[sec_name])
-            i = 1
-
-            for col_name, col_num in matched_section:
-                if col_name == "reptyear":
-                    fill_date(destination, 2, i, reporting_year, length)
-                elif length != 0:
-                    values = get_column_data(data, col_num, start_rows[sec_name], length)
-                    fill_column(destination, i, 2, values)
-                i += 1
-            
-            
-        
-
+            copy_columns(data, destination, mapping, src_row, dst_row, reporting_year)
     return
     
 
-def Data_Tables(reporting_year, input_file, template_file):
+def Data_Tables(reporting_year_input, input_file, template_file):
     print("Data Tables entered")
-    
-    # if getattr(sys, 'frozen', False):
-    #     # Running as bundled exe
-    #     base_dir = os.path.dirname(sys.executable)
-    # else:
-    #     # Running as plain .py
-    #     base_dir = os.path.dirname(os.path.abspath(__file__))
 
+    reporting_year = _num(reporting_year_input)
+    today = date.today()
+    date_str = today.strftime("%m.%d.%y") 
     master_input = load_workbook(input_file, data_only=True)
-    shutil.copy(template_file, 'Data Tables Copy.xlsx')  # CHANGE IF FILE CHANGES
-    final_table = load_workbook('Data Tables Copy.xlsx')
+    new_name = f"Data Tables {date_str}.xlsx"
+    shutil.copy(template_file, new_name)  # CHANGE IF FILE CHANGES
+    final_table = load_workbook(new_name)
 
-    
+    populate_sheet(master_input, final_table, reporting_year)
 
-        populate_sheet()
+    final_table.save(new_name)
 
 

@@ -108,6 +108,7 @@ def load_state():
             state = json.load(f)
         input_file = state.get("input_file", "")
         template_file = state.get("template_file", "")
+        dttemplate_file = state.get("dttemplate_file", "")
         date_entry.insert(0, state.get("reporting_year", ""))
         pdfm_checkbox_var.set(state.get("pdf_merger", False))
         
@@ -126,7 +127,7 @@ def load_state():
         if template_file:
             truncate_label(template_label, text=Path(template_file).name)
         if dttemplate_file:
-            truncate_label(template_label, text=Path(dttemplate_file).name)
+            truncate_label(dttemp_label, text=Path(dttemplate_file).name)
 
         if bsigned_file:
             truncate_label(bsigned_label, text=Path(bsigned_file).name)
@@ -185,7 +186,7 @@ def open_attB_file():
     file_path = filedialog.askopenfilename(filetypes=[("Word documents", "*.docx;*.doc")])
     if file_path:
         file_name = Path(file_path).name
-        truncate_label(attB_label, text=f"{file_name}", max_length=12)
+        truncate_label(attB_label, text=f"{file_name}")
         global attB_file
         attB_file = file_path
         
@@ -193,7 +194,7 @@ def open_attB2_file():
     file_path = filedialog.askopenfilename(filetypes=[("Word documents", "*.docx;*.doc")])
     if file_path:
         file_name = Path(file_path).name
-        truncate_label(attB2_label, text=f"{file_name}", max_length=12)
+        truncate_label(attB2_label, text=f"{file_name}")
         global attB2_file
         attB2_file = file_path
 
@@ -201,7 +202,7 @@ def open_attC_file():
     file_path = filedialog.askopenfilename(filetypes=[("Word documents", "*.docx;*.doc")])
     if file_path:
         file_name = Path(file_path).name
-        truncate_label(attC_label, text=f"{file_name}", max_length=12)
+        truncate_label(attC_label, text=f"{file_name}")
         global attC_file
         attC_file = file_path
         
@@ -209,7 +210,7 @@ def open_attC2_file():
     file_path = filedialog.askopenfilename(filetypes=[("Word documents", "*.docx;*.doc")])
     if file_path:
         file_name = Path(file_path).name
-        truncate_label(attC2_label, text=f"{file_name}", max_length=12)
+        truncate_label(attC2_label, text=f"{file_name}")
         global attC2_file
         attC2_file = file_path
         
@@ -303,10 +304,8 @@ def run_dt():
     run_status.update_idletasks()
 
     def dttarget():
-        global word_app, excel_app
-        # In ATR you do:
-        word_app = win32.Dispatch("Word.Application")
-        excel_app = win32.Dispatch("Excel.Application")
+        # global excel_app
+        # excel_app = win32.Dispatch("Excel.Application")
         
         try:
             Data_Tables.Data_Tables(date_entry.get(), input_file, dttemplate_file)
@@ -320,10 +319,10 @@ def run_dt():
             button_dt.config(state=tk.NORMAL)
             button_cancel.config(state=tk.DISABLED)
 
-            try: 
-                excel_app.Quit()
-            except: 
-                pass
+            # try: 
+            #     excel_app.Quit()
+            # except: 
+            #     pass
 
     atr_thread = threading.Thread(target=dttarget, daemon=True)
     atr_thread.start()
