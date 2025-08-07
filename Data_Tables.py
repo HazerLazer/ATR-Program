@@ -23,13 +23,17 @@ section_1     = {'tifnum': None, 'tifname': None, 'approvedate': None, 'expireda
 section_2     = {'tifnum': None, 'reptyear': None, 'primaryuse': None, 'combomix': None, 'ijrl': None}
 
 section_3_1   = {'tifnum': None, 'reptyear': None, 'taxallocationfundbalance': None, 'proptaxincr-current': None, 
-                 'interest-current': None, 'land/bldg-current': None, 'bond-current': None, 
-                 'municipal-current': None, 'private-current': None, 'totalreceipts': None, 'distributionofsurplus': None,
+                 'interest-current': None, 'land/bldg-current': None, 'bond-current': None, 'municipal-current': None,
+                 'private-current': None, 'totalreceipts': None, 'totalexp/cash': None, 'section3.2atotal': None, 'distributionofsurplus': None,
                  'transfers--municipal': None, 'totalexpend/dist': None, 'netincomecalc': None, 'fundbalancecalc': None}
+
+dest_add_3_1  = {'proptaxincr-current': 5, 'interest-current': 8, 'land/bldg-current': 11, 'bond-current': 14,
+                 'municipal-current': 17, 'private-current': 20, 'distributionofsurplus': 24,
+                 'transfers--municipal': 25, 'totalexpend/dist': 26}
 
 skip2_list    = {'proptaxincr-current', 'interest-current', 'land/bldg-current', 'bond-current', 'municipal-current'}
 
-skip1_list    = {'taxallocationfundbalance', 'private-current', 'totalreceipts'}
+skip1_list    = {'taxallocationfundbalance', 'private-current'}
 
 section_3_1_prev = {'proptaxincr-previous': None, 'interest previous': None, 
                     'land building sale previous': None, 'bond proceeds previous': None,
@@ -50,7 +54,7 @@ section_3_2_A = {'tifnum': None, 'reptyear': None, 'costofstudies': None, 'admin
                  'financing costs': None, 'capital costs': None, 'schooldistricts': None, 
                  'librarydistricts': None, 'relocation costs': None, 'inlieu of taxes': None, 
                  'jobtraining-retraining2': None, 'interest cost': None, 'newhousing': None, 
-                 'daycare services': None, 'other': None}
+                 'daycare services': None, 'other': None, 'total': None}
 
 section_3_2_B = {"tifnum": None, "reptyear": None, "vendorname": None, "vendorservice": None, "payamt": None} 
 
@@ -86,7 +90,7 @@ calculated = {"Section 3.1", "Section 3.1 Previous", "Section 3.1 Other", "Secti
 
 start_rows = {"Section 1": 2, "Section 2": 2, "Section 3.1": 4, "Section 3.1 Previous": 3, "Section 3.1 Other": 4,
               "Section 3.1 Other Previous": 2, "Section 3.2a": 6, "Section 3.2b": 3, "Section 3.3": 4, 
-              "Section 4": 2, "Section 5": 3, "Section 6.2": 3, "Section 6.3": 2, "Attachment A": 2, "Attachment D": 2, 
+              "Section 4": 2, "Section 5": 3, "Section 6.2": 3, "Section 6.3": 3, "Attachment A": 2, "Attachment D": 2, 
               "Attachment E": 2, "Attachment H": 2}
 
 
@@ -184,6 +188,8 @@ def copy_columns(src_ws, dst_ws, mapping, src_start, dst_start_row, reporting_ye
         src_col = mapping[field]
         if field == "reptyear":
             fill_date(dst_ws, dst_start_row, dst_col, reporting_year, length)
+        elif field == "total":
+            continue
         elif src_col is not None:
             # grab the entire column from src and write it downwards in dst
             for i in range(length):
@@ -227,11 +233,16 @@ def populate_sheet(master_input, final_table, reporting_year):
                 for col_name, col_num in matched_section.items():
                     if col_name == "reptyear":
                         fill_date(destination, 2, i, reporting_year, length)
-                    elif length != 0:
+                    elif col_name == "section3.2atotal" or col_name == "totalexpend/dist":
                         if col_name == "totalexpend/dist":
+                            i += 1
+                        continue
+                    elif length != 0:
+                        if col_name == "totalexp/cash":
                             data = master_input["Section 3.2a"]
 
-                            values = get_column_data(data, 24, start_rows["Section 3.2a"], length)
+                            labels = column_match(1, data, sections['Section 3.2a'])
+                            values = get_column_data(data, labels['total'], start_rows["Section 3.2a"], length)
                             fill_column(destination, i, 2, values)
                             
                             data = master_input[sec_name]
@@ -254,22 +265,26 @@ def populate_sheet(master_input, final_table, reporting_year):
                     i += 3
 
                 i = 0
-                while i < length:
-                    value1 = _num(destination.cell(row=i+2, column=4).value) + _num(destination.cell(row=i+2, column=5).value)
-                    value2 = _num(destination.cell(row=i+2, column=7).value) + _num(destination.cell(row=i+2, column=8).value)
-                    value3 = _num(destination.cell(row=i+2, column=10).value) + _num(destination.cell(row=i+2, column=11).value)
-                    value4 = _num(destination.cell(row=i+2, column=13).value) + _num(destination.cell(row=i+2, column=14).value)
-                    value5 = _num(destination.cell(row=i+2, column=16).value) + _num(destination.cell(row=i+2, column=17).value)
-                    value6 = _num(destination.cell(row=i+2, column=19).value) + _num(destination.cell(row=i+2, column=20).value)
-                    destination.cell(row=i+2, column=6).value = value1
-                    destination.cell(row=i+2, column=9).value = value2
-                    destination.cell(row=i+2, column=12).value = value3
-                    destination.cell(row=i+2, column=15).value = value4
-                    destination.cell(row=i+2, column=18).value = value5
-                    destination.cell(row=i+2, column=21).value = value6
-                    destination.cell(row=i+2, column=23).value = value1 + value2 + value3 + value4 + value5 + value6
+                values = get_column_data(data, matched_section['section3.2atotal'], start_rows[sec_name], length)
+                for value in values:
+                    value1 = _num(destination.cell(row=i+2, column=(dest_add_3_1['proptaxincr-current'])-1).value) + _num(destination.cell(row=i+2, column=dest_add_3_1['proptaxincr-current']).value)
+                    value2 = _num(destination.cell(row=i+2, column=(dest_add_3_1['interest-current'])-1).value) + _num(destination.cell(row=i+2, column=(dest_add_3_1['interest-current'])).value)
+                    value3 = _num(destination.cell(row=i+2, column=(dest_add_3_1['land/bldg-current'])-1).value) + _num(destination.cell(row=i+2, column=(dest_add_3_1['land/bldg-current'])).value)
+                    value4 = _num(destination.cell(row=i+2, column=(dest_add_3_1['bond-current'])-1).value) + _num(destination.cell(row=i+2, column=(dest_add_3_1['bond-current'])).value)
+                    value5 = _num(destination.cell(row=i+2, column=(dest_add_3_1['municipal-current'])-1).value) + _num(destination.cell(row=i+2, column=(dest_add_3_1['municipal-current'])).value)
+                    value6 = _num(destination.cell(row=i+2, column=(dest_add_3_1['private-current'])-1).value) + _num(destination.cell(row=i+2, column=(dest_add_3_1['private-current'])).value)
+                    destination.cell(row=i+2, column=(dest_add_3_1['proptaxincr-current'])+1, value=value1)
+                    destination.cell(row=i+2, column=(dest_add_3_1['interest-current'])+1, value=value2)
+                    destination.cell(row=i+2, column=(dest_add_3_1['land/bldg-current'])+1, value=value3)
+                    destination.cell(row=i+2, column=(dest_add_3_1['bond-current'])+1, value=value4)
+                    destination.cell(row=i+2, column=(dest_add_3_1['municipal-current'])+1, value=value5)
+                    destination.cell(row=i+2, column=(dest_add_3_1['private-current'])+1, value=value6)
+                    # destination.cell(row=i+2, column=23).value = value1 + value2 + value3 + value4 + value5 + value6
+                    
+                    value7 = _num(value) + _num(destination.cell(row=i+2, column=(dest_add_3_1['distributionofsurplus'])).value) + _num(destination.cell(row=i+2, column=dest_add_3_1['transfers--municipal']).value)
+                    destination.cell(row=i+2, column=(dest_add_3_1['totalexpend/dist']), value=value7)
+
                     i += 1
-                
                 
 
             elif sec_name == "Section 3.1 Other":
@@ -299,21 +314,11 @@ def populate_sheet(master_input, final_table, reporting_year):
                 i = 3
                 for col_name, col_num in prev_matched_section.items():
                     if length != 0:
-                        if col_name == 'prioryearscumulative':
-                            values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
-                            fill_column(destination, i, 2, values)
-                            destination = final_table["Section 3.1"]
-                            j = 0
-                            for value in values:
-                                destination.cell(row=j+2, column=23).value = _num(value) + _num(destination.cell(row=j+2, column=23).value)
-                                j += 1
-                            destination = destination = final_table[sec_name]
-                        else:
-                            values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
-                            j = 0
-                            for value in values:
-                                destination.cell(j+2, i).value = _num(value) + _num(destination.cell(j+2, i-1).value)
-                                j += 1
+                        values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
+                        j = 0
+                        for value in values:
+                            destination.cell(j+2, i).value = _num(value) + _num(destination.cell(j+2, i-1).value)
+                            j += 1
                     i += 2
 
 
