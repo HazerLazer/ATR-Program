@@ -314,11 +314,15 @@ def populate_sheet(master_input, final_table, reporting_year):
                 i = 3
                 for col_name, col_num in prev_matched_section.items():
                     if length != 0:
-                        values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
-                        j = 0
-                        for value in values:
-                            destination.cell(j+2, i).value = _num(value) + _num(destination.cell(j+2, i-1).value)
-                            j += 1
+                        if col_name == 'prioryearscumulative':
+                            values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
+                            fill_column(destination, i, 2, values)
+                        else:
+                            values = get_column_data(prev_data, col_num, start_rows[prev_name], length)
+                            j = 0
+                            for value in values:
+                                destination.cell(j+2, i).value = _num(value) + _num(destination.cell(j+2, i-1).value)
+                                j += 1
                     i += 2
 
 
