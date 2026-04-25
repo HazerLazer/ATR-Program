@@ -265,33 +265,54 @@ def run_code():
             tif_final.append(tif_inst.list[i])
 
     def target():
+        import pythoncom
+        import win32com.client as win32
+
+        pythoncom.CoInitialize()
+
         global word_app, excel_app
-        # In ATR you do:
-        word_app = win32.Dispatch("Word.Application")
-        excel_app = win32.Dispatch("Excel.Application")
-        
+
         try:
-            Annual_TIF_Report.ATR(tif_final, tif_inst.list, date_entry.get(), input_file, template_file,
-                                attB_file, attB2_file, attC_file, attC2_file, bsigned_file, csigned_file,
-                                pdfm_checkbox_var.get())
+            word_app = win32.Dispatch("Word.Application")
+            excel_app = win32.Dispatch("Excel.Application")
+
+            Annual_TIF_Report.ATR(
+                tif_final,
+                tif_inst.list,
+                date_entry.get(),
+                input_file,
+                template_file,
+                attB_file,
+                attB2_file,
+                attC_file,
+                attC2_file,
+                bsigned_file,
+                csigned_file,
+                pdfm_checkbox_var.get()
+            )
+
             run_status.config(text="Run Complete")
+
         except Exception as e:
-            run_status.config(text=f"Error: {e}")      
-            print(e) 
+            run_status.config(text=f"Error: {e}")
+            print(e)
+
         finally:
-            # Restore buttons
             button_run.config(state=tk.NORMAL)
             button_dt.config(state=tk.NORMAL)
             button_cancel.config(state=tk.DISABLED)
-            
-            try: 
+
+            try:
                 word_app.Quit()
-            except: 
+            except:
                 pass
-            try: 
+
+            try:
                 excel_app.Quit()
-            except: 
+            except:
                 pass
+
+            pythoncom.CoUninitialize()
 
     atr_thread = threading.Thread(target=target, daemon=True)
     atr_thread.start()

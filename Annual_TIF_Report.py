@@ -16,6 +16,7 @@ from PDF_Merger import merge_by_tif_number, bc_docs
 from pypdf import PdfReader, PdfWriter
 import tkinter
 from tkinter import messagebox
+import pythoncom
 
 
 def column_match(label_row: int, data, column_labels: map):
@@ -871,12 +872,12 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
             'interest cost': 3, 'newhousing': 3, 'daycare services': 3, 'other': 3
         }
         row_map = {
-            'costofstudies': 10, 'administrative cost': 18, 'marketing sites': 26, 
-            'site preparation costs': 34, 'renovation rehab, etc': 42, 'public works': 50, 
-            'removing contaminants': 60, 'jobtraining': 68, 'financing costs': 76, 
-            'capital costs': 84, 'schooldistricts': 92, 'librarydistricts': 100, 
-            'relocation costs': 110, 'inlieu of taxes': 118, 'jobtraining-retraining2': 126, 
-            'interest cost': 134, 'newhousing': 135, 'daycare services': 142, 'other': 150
+            'costofstudies': 10, 'administrative cost': 16, 'marketing sites': 21, 
+            'site preparation costs': 26, 'renovation rehab, etc': 33, 'public works': 42, 
+            'removing contaminants': 52, 'jobtraining': 60, 'financing costs': 68, 
+            'capital costs': 76, 'schooldistricts': 84, 'librarydistricts': 92, 
+            'relocation costs': 102, 'inlieu of taxes': 110, 'jobtraining-retraining2': 118, 
+            'interest cost': 126, 'newhousing': 127, 'daycare services': 134, 'other': 142
         }
         
         label_row = 1
@@ -934,10 +935,10 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
         nonlocal footnote_3
         if footnote_2:
             footnote = "(1) Costs relate directly to the salaries and fringe benefits of employees working solely on tax increment financing districts."
-            destination.cell(row=42, column=1, value=footnote)
+            destination.cell(row=40, column=1, value=footnote)
         if footnote_3:
             footnote = "* This table may include payments for Projects that were undertaken prior to 11/1/1999."
-            destination.cell(row=43, column=1, value=footnote)
+            destination.cell(row=41, column=1, value=footnote)
         return
        
     def section_3_3():    
@@ -1006,8 +1007,17 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
             for i in range(len(properties)):
                 destination.cell(row=row, column=2).value = properties[i]
                 row += 6
+                if row == 53:
+                    row += 1
         else:
             destination.cell(row=8, column=1).value = 'X'
+
+        nonlocal sec4_area
+        if len(properties) < 8: # two pages
+            deletion_start = 51
+            sec4_area = "A1:B51"
+            destination.delete_rows(deletion_start, amount=(destination.max_row - deletion_start + 1))
+
         return
     
     def section_5():
@@ -1305,11 +1315,11 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
             'jobsactualperm': 6
         }
         row_map = {
-            'projectname': 19,
-            'jobsprojectedtemp': 19,
-            'jobsactualtemp': 19,
-            'jobsprojectedperm': 19,
-            'jobsactualperm': 19
+            'projectname': 18,
+            'jobsprojectedtemp': 18,
+            'jobsactualtemp': 18,
+            'jobsprojectedperm': 18,
+            'jobsactualperm': 18
         }
         
         label_row = 1
@@ -1330,9 +1340,9 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
             'incrementactual': 5
         }
         row_map = {
-            'projectname': 28,
-            'incrementprojected': 28,
-            'incrementactual': 28
+            'projectname': 36,
+            'incrementprojected': 36,
+            'incrementactual': 36
         }
         
         label_row = 1
@@ -1397,7 +1407,7 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
         
         year_suffix = reporting_year[-2:]
         
-        problem_sections = ["section 5", "section 5 footnotes", "section 6 footnotes"]
+        problem_sections = ["section 4", "section 5", "section 5 footnotes", "section 6 footnotes"]
         single_pages = ["section 2", "section 3.1", "section 3.1 other", "section 3.2 B", "section 3.3", "section 6", "section 7", "section 8"]
 
         current_num = current_tif.num
@@ -1446,6 +1456,7 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
         section_3_3()
         print("Section 3.3 Passed")
         # current_ATR.save("s3-3.xlsx")
+        sec4_area = "A1:B105"
         section_4()
         print("Section 4 Passed")
         # current_ATR.save("s4.xlsx")
@@ -1469,64 +1480,78 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
         # Path to the Excel file you have edited using openpyxl
         excel_file = os.path.abspath(new_name)
         
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.AutomationSecurity = 1
-        excel.DisplayAlerts = False
-        excel.ScreenUpdating = False
-        excel.Visible = False
-        
-        template_wb = excel.Workbooks.Open(template_file)   # open once
-        template_wb.Activate()
+        pythoncom.CoInitialize()
 
-        excel.Application.Run(f"'{template_wb.Name}'!CopyRichTextIntoFile", excel_file)
-        
-        template_wb.Close(False)
-        wb = excel.Workbooks.Open(excel_file)
+        try:
+            import win32com.client as win32
 
-        # Iterate through each worksheet in the workbook
-        for sheet in wb.Worksheets:
-            sname = sheet.Name.lower().strip()
-            if sname == "section 3.1 other" and sheets_to_skip['section 3.1 other']:
-                continue
-
-            sheet.PageSetup.Zoom = False
-            sheet.PageSetup.FitToPagesWide = 1
+            excel = win32.Dispatch("Excel.Application")
+            excel.AutomationSecurity = 1
+            excel.DisplayAlerts = False
+            excel.ScreenUpdating = False
+            excel.Visible = False
             
+            template_wb = excel.Workbooks.Open(template_file)   # open once
+            template_wb.Activate()
+
+            excel.Application.Run(f"'{template_wb.Name}'!CopyRichTextIntoFile", excel_file)
             
-            if sname in problem_sections:
-                if sname == "section 5":
-                    sheet.PageSetup.FitToPagesTall = False
-                    sheet.PageSetup.PrintArea = sec5_area
-                else:
-                    sheet.PageSetup.FitToPagesTall = 1
-                    if sname == "section 5 footnotes":
-                        sheet.PageSetup.PrintArea = "A1:A19"
+            template_wb.Close(False)
+            wb = excel.Workbooks.Open(excel_file)
+
+            # Iterate through each worksheet in the workbook
+            for sheet in wb.Worksheets:
+                sname = sheet.Name.lower().strip()
+                if sname == "section 3.1 other" and sheets_to_skip['section 3.1 other']:
+                    continue
+
+                sheet.PageSetup.Zoom = False
+                sheet.PageSetup.FitToPagesWide = 1
+                
+                
+                if sname in problem_sections:
+                    if sname == "section 5":
+                        sheet.PageSetup.FitToPagesTall = False
+                        sheet.PageSetup.PrintArea = sec5_area
+                    elif sname == "section 4":
+                        sheet.PageSetup.FitToPagesTall = False
+                        sheet.PageSetup.PrintArea = sec4_area
                     else:
-                        sheet.PageSetup.PrintArea = "A1:B20"
-            else:
-                sheet.PageSetup.PrintArea = ""
-                if sname in single_pages:
-                    sheet.PageSetup.FitToPagesTall = 1
+                        sheet.PageSetup.FitToPagesTall = 1
+                        if sname == "section 5 footnotes":
+                            sheet.PageSetup.PrintArea = "A1:A19"
+                        else:
+                            sheet.PageSetup.PrintArea = "A1:B20"
                 else:
-                    sheet.PageSetup.FitToPagesTall = False     # Allow multiple vertical pages                
-            
-            sheet.PageSetup.CenterVertically = False    
-            
-            suffix = sheet_suffix(sheet.Name)
-            pdf_file = os.path.join(output_dir, f"{atr_name}AR{year_suffix}-{suffix}.pdf")
-            
-            sheet.Select()
-            
-            wb.ActiveSheet.ExportAsFixedFormat(0, pdf_file)
-            print(f"Exported {atr_name}_{sheet.Name} to {pdf_file}")
+                    sheet.PageSetup.PrintArea = ""
+                    if sname in single_pages:
+                        sheet.PageSetup.FitToPagesTall = 1
+                    else:
+                        sheet.PageSetup.FitToPagesTall = False     # Allow multiple vertical pages                
+                
+                sheet.PageSetup.CenterVertically = False    
+                
+                suffix = sheet_suffix(sheet.Name)
+                pdf_file = os.path.join(output_dir, f"{atr_name}AR{year_suffix}-{suffix}.pdf")
+                
+                sheet.Select()
+                
+                wb.ActiveSheet.ExportAsFixedFormat(0, pdf_file)
+                print(f"Exported {atr_name}_{sheet.Name} to {pdf_file}")
 
-        wb.Close(False)
-        excel.Application.Quit()
+            wb.Close(False)
+            excel.Application.Quit()
         
-        del wb, excel
-        import gc, pythoncom
-        gc.collect()
-        pythoncom.CoUninitialize()             # optional but helps on some setups
+        finally:
+            try:
+                del wb, excel
+            except:
+                pass
+
+            import gc
+            gc.collect()
+            
+            pythoncom.CoUninitialize()             # optional but helps on some setups
 
         # ---- delete the temporary Excel file --------------------------------
         from pathlib import Path
