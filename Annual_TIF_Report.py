@@ -1112,7 +1112,7 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
                                         pub_previous, pub_complete, project_type, new_deal, cur_pmts, straddling_fn)) 
         
         try:
-            project_list.sort(key=lambda x: x.num)
+            project_list.sort(key=lambda x: (not x.ong, x.num))
         except TypeError as e:
             messagebox.showerror(
                 "Sorting Error",

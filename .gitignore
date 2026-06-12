@@ -1,0 +1,26 @@
+# Excel / Office files
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+~$*
+
+# Output directories
+Final Output */
+Section Output */
+
+# PyInstaller build artifacts
+build/
+dist/
+*.exe
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# App state
+gui_state.json
+
+# Misc project folders
+txt-converter/
