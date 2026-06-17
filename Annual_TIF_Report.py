@@ -1272,13 +1272,13 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
                 foot_row += 1
             if footnote_8:
                 if current_num in (48, 53, 95):
-                    footnote = "(1) This project straddles the Western/Ogden Redevelopment Project Area and the Pilsen Industrial Corridor Redevelopment Project Area and the Midwest Redevelopment Project Area."
+                    footnote = "(1) This project straddles the Western/Ogden Redevelopment Project Area and the Pilsen Redevelopment Project Area and the Midwest Redevelopment Project Area."
                 elif current_num in (30, 94):
-                    footnote = "(1) This project straddles the Near North Redevelopment Project Area and the Chicago/Kingsbury Redevelopment Project Area."
+                    footnote = "(1) This project straddles the Near North Redevelopment Project Area and the former Chicago/Kingsbury Redevelopment Project Area."
                 elif current_num in (52, 115):
                     footnote = "(1) This project straddles the Kinzie Industrial Corridor Redevelopment Project Area and the Chicago/Central Park Redevelopment Project Area."
                 elif current_num in (107, 108):
-                    footnote = "(1) This project straddles the Division/Homan Redevelopment Project Area and the Humboldt Redevelopment Project Area."
+                    footnote = "(1) This project straddles the Division/Homan Redevelopment Project Area and the Humboldt Park Commercial Redevelopment Project Area."
                 destination.cell(row=foot_row, column=1, value=footnote)
                 foot_row += 1
             if footnote_10:
@@ -1294,7 +1294,7 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
                 destination.cell(row=foot_row, column=1, value=footnote)
                 foot_row += 1
             if footnote_11:
-                footnote = "(4) This line reports the amounts, if any, that have been or are anticipated to be funded from increment received from this Area only.  The aggregate amount of Public Investment Undertaken for this Project is the sum of these figures, if any, and the corresponding figures from the now-terminated Near West TIF Area."
+                footnote = "(4) The Public Investment Undertaken for this project has been funded from increment received from this Area only.  The aggregate amount of Public Investment Undertaken for this Project is the sum of these figures, if any, and the corresponding figures from the former Near West TIF Area."
                 destination.cell(row=foot_row, column=1, value=footnote)
                 foot_row += 1
         
@@ -1315,11 +1315,11 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
             'jobsactualperm': 6
         }
         row_map = {
-            'projectname': 18,
-            'jobsprojectedtemp': 18,
-            'jobsactualtemp': 18,
-            'jobsprojectedperm': 18,
-            'jobsactualperm': 18
+            'projectname': 19,
+            'jobsprojectedtemp': 19,
+            'jobsactualtemp': 19,
+            'jobsprojectedperm': 19,
+            'jobsactualperm': 19
         }
         
         label_row = 1
