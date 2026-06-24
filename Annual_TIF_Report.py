@@ -1272,7 +1272,7 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
                 foot_row += 1
             if footnote_8:
                 if current_num in (48, 53, 95):
-                    footnote = "(1) This project straddles the Western/Ogden Redevelopment Project Area and the Pilsen Redevelopment Project Area and the Midwest Redevelopment Project Area."
+                    footnote = "(1) This project straddles the Western/Ogden Redevelopment Project Area and the Pilsen Industrial Corridor Redevelopment Project Area and the Midwest Redevelopment Project Area."
                 elif current_num in (30, 94):
                     footnote = "(1) This project straddles the Near North Redevelopment Project Area and the former Chicago/Kingsbury Redevelopment Project Area."
                 elif current_num in (52, 115):
@@ -1282,11 +1282,11 @@ def ATR(tif_list, section1_list, reporting_year, input_file, template_file, attB
                 destination.cell(row=foot_row, column=1, value=footnote)
                 foot_row += 1
             if footnote_10:
-                footnote = "(2) The Public Investment Undertaken for this project has been funded from increment received from this Area only.  The aggregate amount of Public Investment Undertaken for this Project is the sum of these figures, if any, and the corresponding figures from the other Area or Areas that this Project straddles."
+                footnote = "(2) The Public Investment Undertaken for this Project has been funded from increment received from this Area only.  The aggregate amount of Public Investment Undertaken for this Project is the sum of these figures, if any, and the corresponding figures from the other Area or Areas that this Project straddles."
                 destination.cell(row=foot_row, column=1, value=footnote)
                 foot_row += 1
             elif footnote_13:
-                footnote = "(2) The Public Investment Undertaken for this project has been funded from increment received from this Area only.  In this case, no increment from this Area was invested in this Project. The aggregate amount of Public Investment Undertaken for this Project is the sum of these figures, if any, and the corresponding figures, if any, from the other Area or Areas that this Project straddles."
+                footnote = "(2) The Public Investment Undertaken for this Project has been funded from increment received from this Area only.  In this case, no increment from this Area was invested in this Project. The aggregate amount of Public Investment Undertaken for this Project is the sum of these figures, if any, and the corresponding figures, if any, from the other Area or Areas that this Project straddles."
                 destination.cell(row=foot_row, column=1, value=footnote)
                 foot_row += 1
             if footnote_9:
